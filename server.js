@@ -28,10 +28,16 @@ function parseFollowerText(raw) {
 async function getFollowerCount() {
   const browser = await puppeteer.launch({
     headless: "new",
+    executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || null,
     args: [
       '--no-sandbox',
       '--disable-setuid-sandbox',
       '--disable-dev-shm-usage',
+      '--disable-gpu',
+      '--no-first-run',
+      '--no-zygote',
+      '--single-process',
+      '--disable-extensions',
       '--disable-blink-features=AutomationControlled',
       '--window-size=1920,1080'
     ]

@@ -54,7 +54,7 @@ async function getFollowerCount() {
     );
 
     // Load cookies from file
-    const cookiePath = path.join(__dirname, 'cookies.json');
+    const cookiePath = path.join(__dirname, 'cookie.json');
     if (fs.existsSync(cookiePath)) {
       const raw = JSON.parse(fs.readFileSync(cookiePath, 'utf8'));
       const cookies = raw.map(c => ({
@@ -75,10 +75,9 @@ async function getFollowerCount() {
     }
 
     console.log('[Scraper] Opening x.com/lithiumtako ...');
-
-    await page.goto('https://x.com/lithiumtako', {
-      waitUntil: 'networkidle2',
-      timeout: 60000
+await page.goto('https://x.com/lithiumtako', {
+      waitUntil: 'domcontentloaded',
+      timeout: 90000
     });
 
    try {
@@ -87,7 +86,8 @@ async function getFollowerCount() {
       console.log('[Scraper] waitForSelector timed out — trying anyway...');
     }
 
-    await new Promise(r => setTimeout(r, 3000));
+   await new Promise(r => setTimeout(r, 6000));
+
 const text = await page.evaluate(() => {
       // Strategy 1: find a link containing /followers in href
       const links = Array.from(document.querySelectorAll('a'));

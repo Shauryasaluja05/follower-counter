@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>kuru • followers</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    /* simulates Windows Night Light strength ~24 */
+    html {
+      filter: sepia(0.34) saturate(1.45) brightness(0.91);
+    }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'DM Sans', sans-serif;
+      position: relative;
+      background: #f2c4ce;
+      overflow: hidden;
+    }
+
+    /* crayon grain texture */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='400' height='400' filter='url(%23n)' opacity='0.18'/%3E%3C/svg%3E");
+      background-size: 200px 200px;
+      mix-blend-mode: multiply;
+      pointer-events: none;
+    }
+
+    /* smudged colour blobs */
+    .smudge {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(80px);
+      opacity: 0.45;
+      pointer-events: none;
+      z-index: 0;
+    }
+    .smudge-1 { width: 520px; height: 420px; background: #f0a8bb; top: -100px; left: -80px; transform: rotate(-20deg); }
+    .smudge-2 { width: 400px; height: 380px; background: #e8b4c0; bottom: -80px; right: -60px; transform: rotate(15deg); }
+    .smudge-3 { width: 300px; height: 260px; background: #f7cdd6; top: 40%; left: 50%; transform: translate(-50%, -50%); }
+    .smudge-4 { width: 200px; height: 180px; background: #d4a8b4; bottom: 20%; left: 10%; }
+
+    /* ── Floating images ── */
+    .floater {
+      position: fixed;
+      pointer-events: none;
+      mix-blend-mode: multiply;
+      opacity: 0;
+      z-index: 1;
+      animation: floatDrift linear infinite;
+    }
+
+    @keyframes floatDrift {
+      0%   { opacity: 0;    transform: translateY(0px)    rotate(0deg)   scale(1);    }
+      8%   { opacity: 0.85; }
+      90%  { opacity: 0.7;  }
+      100% { opacity: 0;    transform: translateY(-105vh) rotate(25deg) scale(1.05); }
+    }
+
+    .f1  { left: 5%;   bottom: -10%; width: 450px;  animation-duration: 14s; animation-delay: 0s;  }
+    .f2  { left: 18%;  bottom: -10%; width: 410px;  animation-duration: 18s; animation-delay: 3s;  }
+    .f3  { left: 32%;  bottom: -10%; width: 430px;  animation-duration: 12s; animation-delay: 6s;  }
+    .f4  { left: 48%;  bottom: -10%; width: 420px;  animation-duration: 20s; animation-delay: 1s;  }
+    .f5  { left: 62%;  bottom: -10%; width: 440px;  animation-duration: 15s; animation-delay: 8s;  }
+    .f6  { left: 76%;  bottom: -10%; width: 425px;  animation-duration: 17s; animation-delay: 4s;  }
+    .f7  { left: 88%;  bottom: -10%; width: 420px;  animation-duration: 13s; animation-delay: 10s; }
+    .f8  { left: 10%;  bottom: -10%; width: 410px;  animation-duration: 22s; animation-delay: 13s; }
+    .f9  { left: 40%;  bottom: -10%; width: 415px;  animation-duration: 16s; animation-delay: 7s;  }
+    .f10 { left: 55%;  bottom: -10%; width: 440px;  animation-duration: 19s; animation-delay: 2s;  }
+    .f11 { left: 70%;  bottom: -10%; width: 450px;  animation-duration: 11s; animation-delay: 9s;  }
+    .f12 { left: 25%;  bottom: -10%; width: 435px;  animation-duration: 24s; animation-delay: 15s; }
+
+    /* ── Main content ── */
+    .content {
+      position: relative;
+      z-index: 10;
+      text-align: center;
+    }
+
+    .name {
+      font-size: 1.8rem;
+      font-weight: 400;
+      color: #6b3a46;
+      letter-spacing: 6px;
+      text-transform: lowercase;
+      margin-bottom: 6px;
+    }
+
+    .handle {
+      font-size: 1.3rem;
+      font-weight: 300;
+      color: #9e6070;
+      letter-spacing: 3px;
+      margin-bottom: 60px;
+    }
+
+    .label {
+      font-size: 0.6rem;
+      font-weight: 400;
+      letter-spacing: 5px;
+      text-transform: uppercase;
+      color: #b07080;
+      margin-bottom: 12px;
+    }
+
+    #counter {
+      font-size: 6rem;
+      font-weight: 300;
+      color: #6b3a46;
+      letter-spacing: -2px;
+      line-height: 1;
+      min-height: 90px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 40px;
+    }
+
+    .status-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      font-size: 0.7rem;
+      font-weight: 300;
+      color: #b07080;
+      letter-spacing: 1px;
+    }
+
+    /* little CSS heart that pulses as the live indicator */
+    .dot {
+      position: relative;
+      width: 10px;
+      height: 9px;
+      flex-shrink: 0;
+      animation: heartPulse 2s ease-in-out infinite;
+    }
+    .dot::before,
+    .dot::after {
+      content: '';
+      position: absolute;
+      width: 6px;
+      height: 9px;
+      background: #c0607a;
+      border-radius: 6px 6px 0 0;
+    }
+    .dot::before {
+      left: 4px;
+      transform-origin: left bottom;
+      transform: rotate(-45deg);
+    }
+    .dot::after {
+      left: 0px;
+      transform-origin: right bottom;
+      transform: rotate(45deg);
+    }
+    .dot.loading::before,
+    .dot.loading::after { background: #c8a0a8; }
+    .dot.loading { animation: none; }
+    .dot.error::before,
+    .dot.error::after  { background: #c07070; }
+    .dot.error { animation: none; }
+
+    @keyframes heartPulse {
+      0%, 100% { transform: scale(1);    filter: drop-shadow(0 0 0px rgba(192,96,122,0)); }
+      50%       { transform: scale(1.35); filter: drop-shadow(0 0 4px rgba(192,96,122,0.6)); }
+    }
+
+    #timestamp {
+      margin-top: 10px;
+      font-size: 0.62rem;
+      font-weight: 300;
+      color: #c8a0a8;
+      letter-spacing: 1px;
+    }
+
+    .boyfriend {
+      position: fixed;
+      bottom: 24px;
+      right: 30px;
+      font-size: 1.18rem;
+      font-weight: 300;
+      color: #b07080;
+      letter-spacing: 1px;
+      font-style: italic;
+      z-index: 10;
+    }
+
+    .dots { display: inline-flex; gap: 10px; }
+    .dot-bounce {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      background: #c08090;
+      animation: bounce 1.2s infinite ease-in-out;
+    }
+    .dot-bounce:nth-child(2) { animation-delay: 0.2s; }
+    .dot-bounce:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes bounce {
+      0%, 80%, 100% { transform: scale(0.7); opacity: 0.3; }
+      40%            { transform: scale(1.2); opacity: 1; }
+    }
+
+    /* ── Celebration overlay ── */
+    #celebration {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      background: #f2c4ce;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+    }
+    #celebration.show {
+      display: flex;
+      animation: celebFadeIn 1.2s ease both;
+    }
+    @keyframes celebFadeIn {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
+
+    #confetti-canvas {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 101;
+    }
+
+    .celeb-number {
+      font-size: 10rem;
+      font-weight: 300;
+      color: #6b3a46;
+      letter-spacing: -4px;
+      line-height: 1;
+      animation: numberPop 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) 0.4s both;
+      position: relative;
+      z-index: 102;
+    }
+    @keyframes numberPop {
+      from { transform: scale(0.4); opacity: 0; }
+      to   { transform: scale(1);   opacity: 1; }
+    }
+
+    .celeb-label {
+      font-size: 0.65rem;
+      letter-spacing: 6px;
+      text-transform: uppercase;
+      color: #b07080;
+      margin-top: 6px;
+      margin-bottom: 50px;
+      animation: fadeUp 0.8s ease 0.9s both;
+      position: relative;
+      z-index: 102;
+    }
+
+    .celeb-message {
+      font-size: 1rem;
+      font-weight: 300;
+      color: #7a3a50;
+      letter-spacing: 1px;
+      line-height: 1.9;
+      max-width: 380px;
+      animation: fadeUp 0.8s ease 1.3s both;
+      position: relative;
+      z-index: 102;
+    }
+    .celeb-message em {
+      font-style: normal;
+      font-weight: 500;
+      color: #c0607a;
+    }
+
+    .celeb-sub {
+      margin-top: 40px;
+      font-size: 1rem;
+      font-weight: 300;
+      color: #b07080;
+      letter-spacing: 1px;
+      font-style: italic;
+      animation: fadeUp 0.8s ease 1.8s both;
+      position: relative;
+      z-index: 102;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="smudge smudge-1"></div>
+  <div class="smudge smudge-2"></div>
+  <div class="smudge smudge-3"></div>
+  <div class="smudge smudge-4"></div>
+
+  <!--
+  ============================================================
+  HOW TO ADD YOUR FLOATING IMAGES
+  ============================================================
+
+  STEP 1 — Put your PNG files inside the "public" folder
+           (same folder as this index.html file)
+
+  STEP 2 — Name them exactly like this:
+             star1.png   star2.png   star3.png
+             star4.png   star5.png
+             heart1.png  heart2.png
+             heart3.png  heart4.png
+
+  STEP 3 — Save the file and refresh the browser.
+           The images will float up automatically.
+
+  That's it! Nothing else to change.
+  ============================================================
+  -->
+
+  <img class="floater f1"  src="heart1.png" alt="" />
+  <img class="floater f2"  src="star1.png"  alt="" />
+  <img class="floater f3"  src="heart2.png" alt="" />
+  <img class="floater f4"  src="star2.png"  alt="" />
+  <img class="floater f5"  src="heart3.png" alt="" />
+  <img class="floater f6"  src="star3.png"  alt="" />
+  <img class="floater f7"  src="heart4.png" alt="" />
+  <img class="floater f8"  src="star4.png"  alt="" />
+  <img class="floater f9"  src="star5.png"  alt="" />
+  <img class="floater f10" src="heart1.png" alt="" />
+  <img class="floater f11" src="heart3.png" alt="" />
+  <img class="floater f12" src="star2.png"  alt="" />
+
+  
+  <canvas id="confetti-canvas"></canvas>
+  <div id="celebration">
+    <div class="celeb-number">900</div>
+    <div class="celeb-label">followers</div>
+    <div class="celeb-message">
+      AAAAAAAAAAAAAAAAAAAAAAAAAAA U DID ITTT RFNFJIJFRJF itne saaree
+      <em>(including me)</em> FOLLOWED YOUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUU
+      UR THE BEST ARTIST EVER PGL LADKI
+      ITS ALL HARDWORK AND IM SO PROUD OF U BABYYFHUEHFU
+    </div>
+    <div class="celeb-sub">- the proudest boyfriend.</div>
+  </div>
+
+  <div class="boyfriend">-the proudest boyfriend.</div>
+
+  <div class="content">
+    <div class="name">kuru</div>
+    <div class="handle">@lithiumtako</div>
+
+    <div class="label">followers</div>
+
+    <div id="counter">
+      <div class="dots">
+        <div class="dot-bounce"></div>
+        <div class="dot-bounce"></div>
+        <div class="dot-bounce"></div>
+      </div>
+    </div>
+
+    <div class="status-row">
+      <div class="dot loading" id="live-dot"></div>
+      <span id="status-msg">loading</span>
+    </div>
+    <div id="timestamp"></div>
+  </div>
+
+  <script>
+    
+    const canvas = document.getElementById('confetti-canvas');
+    const ctx    = canvas.getContext('2d');
+    let pieces   = [];
+    let confettiRunning = false;
+    let rafConfetti = null;
+
+    const COLORS = ['#f472a8','#c0607a','#4caf82','#a8e6c0','#f7cdd6','#d4a8b4','#f0c040','#e8a0b0','#88c8a0','#ff85a1','#b5ead7'];
+
+    function resizeCanvas() {
+      canvas.width  = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    
+    const MAX_PIECES = 220;
+
+    function spawnBatch() {
+      const toAdd = Math.min(40, MAX_PIECES - pieces.length);
+      for (let i = 0; i < toAdd; i++) {
+        const big = Math.random() > 0.4; 
+        pieces.push({
+          x:       Math.random() * canvas.width,
+          y:       -20 - Math.random() * 150,
+          w:       big ? 14 + Math.random() * 18 : 8 + Math.random() * 10,
+          h:       big ? 20 + Math.random() * 24 : 12 + Math.random() * 14,
+          color:   COLORS[Math.floor(Math.random() * COLORS.length)],
+          angle:   Math.random() * Math.PI * 2,
+          spin:    (Math.random() - 0.5) * 0.12,
+          vx:      (Math.random() - 0.5) * 2,
+          vy:      1.2 + Math.random() * 2,       
+          wobble:  Math.random() * Math.PI * 2,
+          opacity: 0.85 + Math.random() * 0.15
+        });
+      }
+    }
+
+    let lastSpawn = 0;
+
+    function drawConfetti(ts) {
+      if (!confettiRunning) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        return;
+      }
+
+      
+      if (ts - lastSpawn > 600) {
+        spawnBatch();
+        lastSpawn = ts;
+      }
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      for (let i = pieces.length - 1; i >= 0; i--) {
+        const p = pieces[i];
+        p.y      += p.vy;
+        p.x      += p.vx + Math.sin(p.wobble) * 1.2;
+        p.angle  += p.spin;
+        p.wobble += 0.04;
+
+        if (p.y > canvas.height + 40) {
+          
+          p.y      = -20 - Math.random() * 100;
+          p.x      = Math.random() * canvas.width;
+          p.vy     = 1.2 + Math.random() * 2;
+          p.vx     = (Math.random() - 0.5) * 2;
+        }
+
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.angle);
+        ctx.globalAlpha = p.opacity;
+        ctx.fillStyle   = p.color;
+        ctx.beginPath();
+        ctx.roundRect(-p.w / 2, -p.h / 2, p.w, p.h, 3);
+        ctx.fill();
+        ctx.restore();
+      }
+
+      rafConfetti = requestAnimationFrame(drawConfetti);
+    }
+
+    function triggerCelebration() {
+      document.getElementById('celebration').classList.add('show');
+      confettiRunning = true;
+      spawnBatch();
+      spawnBatch();
+      lastSpawn = performance.now();
+      rafConfetti = requestAnimationFrame(drawConfetti);
+      
+    }
+
+    
+    let currentCount = null;
+    let celebrated   = false;
+    let rafId        = null;
+
+    const counterEl = document.getElementById('counter');
+    const liveDotEl = document.getElementById('live-dot');
+    const statusEl  = document.getElementById('status-msg');
+    const tsEl      = document.getElementById('timestamp');
+
+    function fmt(n) { return n.toLocaleString('en-US'); }
+
+    function setStatus(type, msg) {
+      liveDotEl.className = 'dot' + (type ? ' ' + type : '');
+      statusEl.textContent = msg;
+    }
+
+    function animateTo(from, to, ms = 2000) {
+      if (rafId) cancelAnimationFrame(rafId);
+      const start = performance.now();
+      function tick(now) {
+        const p = Math.min((now - start) / ms, 1);
+        const eased = 1 - Math.pow(1 - p, 3);
+        counterEl.textContent = fmt(Math.round(from + (to - from) * eased));
+        if (p < 1) { rafId = requestAnimationFrame(tick); }
+      }
+      rafId = requestAnimationFrame(tick);
+    }
+
+    async function poll() {
+      try {
+        const res  = await fetch('/api/followers');
+        const data = await res.json();
+
+        if (!res.ok || (data.error && data.count == null)) {
+          counterEl.textContent = '—';
+          setStatus('error', 'could not fetch');
+          return;
+        }
+
+        const from = currentCount ?? data.count;
+        animateTo(from, data.count);
+        currentCount = data.count;
+        tsEl.textContent = 'my hardworking kuru is here at ' + new Date().toLocaleTimeString();
+
+        
+        if (data.count >=900& !celebrated) {
+          celebrated = true;
+          setTimeout(triggerCelebration, 2200);
+        }
+
+        if (data.stale) {
+          setStatus('loading', 'retrying soon');
+        } else if (data.cached) {
+          const mins = Math.ceil(data.refreshIn / 60);
+          setStatus('', `checking piddu's followers again in ${mins} min`);
+        } else {
+          setStatus('', 'live');
+        }
+
+      } catch (e) {
+        counterEl.textContent = '—';
+        setStatus('error', 'could not reach server');
+      }
+    }
+
+    poll();
+    setInterval(poll, 30_000);
+  </script>
+
+</body>
+</html>
